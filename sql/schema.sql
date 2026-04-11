@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS users (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  name     TEXT    NOT NULL UNIQUE,
+  password TEXT    NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS weight_records (
+  id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  time    TEXT    NOT NULL,
+  weight  REAL    NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
