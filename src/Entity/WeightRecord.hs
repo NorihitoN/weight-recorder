@@ -4,7 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Entity.User where
+module Entity.WeightRecord where
 
 import GHC.Generics (Generic)
 import Database.HDBC.Query.TH (defineTableFromDB)
@@ -14,7 +14,7 @@ import Database.HDBC.Sqlite3 (connectSqlite3)
 
 defineTableFromDB
   (connectSqlite3 "weight.db")
-  (driverSQLite3 {typeMap = [("INTEGER", [t|Int|])]})
+  (driverSQLite3 {typeMap = [("INTEGER", [t|Int|]), ("FLOAT", [t|Double|])]})
   "main"
-  "user"
+  "weight_record"
   [''Show, ''Generic]
