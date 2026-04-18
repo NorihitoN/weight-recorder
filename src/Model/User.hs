@@ -5,10 +5,16 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-unused-do-bind #-}
 
-module Model.User where
+module Model.User
+  ( NewUser (..),
+    piNewUser,
+    createUser,
+    selectUser,
+  )
+where
 
 import Control.Exception (catch)
-import Crypto.BCrypt (hashPasswordUsingPolicy, slowerBcryptHashingPolicy)
+import Crypto.BCrypt (hashPasswordUsingPolicy, slowerBcryptHashingPolicy, validatePassword)
 import qualified Data.ByteString as BS
 import Data.Functor.ProductIsomorphic ((|$|), (|*|))
 import Data.Text (pack, unpack)
@@ -35,8 +41,8 @@ instance ToSql SqlValue NewUser
 piNewUser :: HRR.Pi User.User NewUser
 piNewUser = NewUser |$| User.name' |*| User.password'
 
-insertUser :: (IConnection c) => NewUser -> c -> IO Integer
-insertUser u conn = do
+createUser :: (IConnection c) => NewUser -> c -> IO Integer
+createUser u conn = do
   mHash <- hashPasswordUsingPolicy slowerBcryptHashingPolicy $ enc . nuPassword $ u
   case mHash of
     Nothing -> do
@@ -57,3 +63,23 @@ enc = encodeUtf8 . pack
 
 dec :: BS.ByteString -> String
 dec = unpack . decodeUtf8
+
+selectUser :: (IConnection c) => String -> String -> c -> IO (Maybe User.User)
+selectUser name pass conn = do
+  user <- DHR.runQuery conn q name >>= DHR.listToUnique
+  return $ user >>= checkHash
+  where
+    q :: HRR.Query String User.User
+    q =
+      HRR.relationalQuery . HRR.relation' . HRR.placeholder $
+        \ph -> do
+          a <- HRR.query User.user
+          HRR.wheres $ a HRR.! User.name' HRR..=. ph
+          return a
+    checkHash :: User.User -> Maybe User.User
+    checkHash user
+      | validated = Just user
+      | otherwise = Nothing
+      where
+        hashed = User.password user
+        validated = validatePassword (enc hashed) (enc pass)
