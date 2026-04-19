@@ -9,6 +9,7 @@ library
       Entity.User
     , Entity.WeightRecord
     , Model.User
+    , Model.WeightRecord
   hs-source-dirs:   src
   default-language: Haskell2010
   ghc-options:      -Wall
@@ -28,6 +29,7 @@ library
     , text                  >= 1.2
     , bytestring            >= 0.11
     , bcrypt                >= 0.0.11
+    , time                  >= 1.9
 
 executable weight-recorder
   main-is:          Main.hs
