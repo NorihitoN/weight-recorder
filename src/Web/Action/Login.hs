@@ -7,20 +7,15 @@ module Web.Action.Login
 where
 
 import Control.Monad.IO.Class (liftIO)
+import Data.Aeson (object, (.=))
 import Database.HDBC.Sqlite3 (Connection)
 import qualified Entity.User as EU
 import Model.User (selectUser)
-import Web.Core (redirectTo, setSessionUserId)
+import Web.Core (redirectTo, renderTemplate, setSessionUserId)
 import Web.Scotty
 
 getLogin :: ActionM ()
-getLogin =
-  html
-    "<form method='post' action='/login'>\
-    \  <input type='text'     name='name'     placeholder='Username'><br>\
-    \  <input type='password' name='password' placeholder='Password'><br>\
-    \  <button type='submit'>Login</button>\
-    \</form>"
+getLogin = renderTemplate "login.mustache" (object [])
 
 postLogin :: Connection -> ActionM ()
 postLogin conn = do
@@ -28,7 +23,9 @@ postLogin conn = do
   pass <- formParam "password"
   mUser <- liftIO $ selectUser name pass conn
   case mUser of
-    Nothing -> html "Invalid name or password"
+    Nothing ->
+      renderTemplate "login.mustache"
+        (object ["error" .= ("ユーザー名またはパスワードが違います" :: String)])
     Just user -> do
       setSessionUserId (EU.id user)
       redirectTo "/records"

@@ -2,8 +2,10 @@
 
 module Web.Core where
 
+import Control.Monad.IO.Class (liftIO)
 import qualified Data.Text.Lazy as TL
 import Database.HDBC.Sqlite3 (Connection)
+import Text.Mustache (ToMustache, automaticCompile, substitute)
 import Web.Scotty
 
 type AppAction = Connection -> ActionM ()
@@ -35,6 +37,13 @@ requireLogin = do
   case mUid of
     Nothing -> redirectTo "/login" >> return 0
     Just uid -> return uid
+
+renderTemplate :: ToMustache v => FilePath -> v -> ActionM ()
+renderTemplate path ctx = do
+  result <- liftIO $ automaticCompile ["templates"] path
+  case result of
+    Left err   -> html $ TL.pack $ show err
+    Right tmpl -> html $ TL.fromStrict $ substitute tmpl ctx
 
 parseCookie :: TL.Text -> Maybe Int
 parseCookie cookie =

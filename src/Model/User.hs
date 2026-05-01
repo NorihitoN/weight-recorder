@@ -10,6 +10,7 @@ module Model.User
     piNewUser,
     createUser,
     selectUser,
+    selectUserById,
   )
 where
 
@@ -83,3 +84,15 @@ selectUser name pass conn = do
       where
         hashed = User.password user
         validated = validatePassword (enc hashed) (enc pass)
+
+selectUserById :: (IConnection c) => Int -> c -> IO (Maybe User.User)
+selectUserById uid conn =
+  DHR.runQuery conn q uid >>= DHR.listToUnique
+  where
+    q :: HRR.Query Int User.User
+    q =
+      HRR.relationalQuery . HRR.relation' . HRR.placeholder $
+        \ph -> do
+          a <- HRR.query User.user
+          HRR.wheres $ a HRR.! User.id' HRR..=. ph
+          return a
